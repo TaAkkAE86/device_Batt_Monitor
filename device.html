@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔋 Battery Device</title>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    h1 { font-size: 1.4rem; margin-bottom: 6px; }
+
+    .sub {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-align: left;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    input:focus { border-color: #3b82f6; }
+
+    button {
+      width: 100%;
+      background: #3b82f6;
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover { background: #2563eb; }
+
+    /* Monitor */
+    .monitor { display: none; }
+
+    .batt-wrap {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    .batt-body {
+      width: 130px;
+      height: 62px;
+      border: 4px solid #475569;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .batt-body::after {
+      content: '';
+      position: absolute;
+      right: -12px; top: 50%;
+      transform: translateY(-50%);
+      width: 8px; height: 26px;
+      background: #475569;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .batt-fill {
+      position: absolute;
+      left: 0; top: 0;
+      height: 100%; width: 0%;
+      border-radius: 6px;
+      transition: width 1s, background 0.5s;
+    }
+
+    .bolt {
+      position: absolute;
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; z-index: 1;
+      opacity: 0; transition: opacity 0.3s;
+    }
+
+    .bolt.show { opacity: 1; }
+
+    .pct {
+      font-size: 3rem;
+      font-weight: 800;
+      margin: 8px 0 4px;
+      transition: color 0.5s;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .info-box {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .info-label { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; }
+    .info-val   { font-size: 0.9rem; font-weight: 600; }
+
+    /* ID Box */
+    .id-box {
+      background: #0f172a;
+      border: 1px dashed #3b82f6;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .id-label { font-size: 0.7rem; color: #64748b; margin-bottom: 6px; }
+
+    .id-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #3b82f6;
+      letter-spacing: 0.05em;
+    }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .badge.ready    { background: #052e16; color: #86efac; }
+    .badge.waiting  { background: #0c1a3a; color: #93c5fd; }
+    .badge.error    { background: #450a0a; color: #fca5a5; }
+    .badge.nobatt   { background: #3b1f02; color: #fde68a; }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity:1; }
+      50%      { opacity:0.2; }
+    }
+
+    /* Connections list */
+    .conn-list {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 12px;
+      min-height: 36px;
+      text-align: left;
+    }
+
+    .conn-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 3px 0;
+      color: #86efac;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #64748b;
+      font-size: 0.78rem;
+      padding: 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+
+    .reset-btn:hover { background: #1e293b; }
+
+    .no-api {
+      background: #3b1f02;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fde68a;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- SETUP -->
+  <div id="setupBox">
+    <h1>🔋 Battery Device</h1>
+    <p class="sub">ตั้งค่าอุปกรณ์เพื่อส่งข้อมูลไป Dashboard</p>
+
+    <label>🪪 ID อุปกรณ์ (ใช้ภาษาอังกฤษ ไม่มีช่องว่าง)</label>
+    <input type="text" id="peerIdInput"
+      placeholder="เช่น office-laptop, phone-01, tablet-A"/>
+
+    <button onclick="startDevice()">🚀 เริ่มต้น</button>
+  </div>
+
+  <!-- MONITOR -->
+  <div class="monitor" id="monitorBox">
+    <h1>🔋 Battery Device</h1>
+
+    <!-- ID แสดงให้ Dashboard ใช้ -->
+    <div class="id-box">
+      <div class="id-label">📡 ID อุปกรณ์นี้ (แจ้ง Dashboard)</div>
+      <div class="id-value" id="myIdDisplay">—</div>
+    </div>
+
+    <div class="badge waiting" id="statusBadge">
+      <div class="dot"></div>
+      <span id="statusText">รอ Dashboard เชื่อมต่อ...</span>
+    </div>
+
+    <!-- Battery UI -->
+    <div id="batteryUI">
+      <div class="batt-wrap">
+        <div class="batt-body">
+          <div class="batt-fill" id="fill"></div>
+          <div class="bolt" id="bolt">⚡</div>
+        </div>
+      </div>
+
+      <div class="pct" id="pctText">--%</div>
+      <div style="font-size:0.8rem;color:#64748b;margin-bottom:12px"
+           id="chargeLabel">กำลังอ่าน...</div>
+
+      <div class="info-row">
+        <div class="info-box">
+          <div class="info-label">🔌 สถานะ</div>
+          <div class="info-val" id="statusVal">--</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">⏱ เวลาคงเหลือ</div>
+          <div class="info-val" id="timeVal">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connections -->
+    <div class="conn-list" id="connList">
+      <span style="color:#475569">ยังไม่มี Dashboard เชื่อมต่อ</span>
+    </div>
+
+    <button class="reset-btn" onclick="resetDevice()">⚙️ เปลี่ยน ID</button>
+  </div>
+
+</div>
+
+<script>
+  let peer      = null;
+  let battery   = null;
+  let conns     = {};    // { connId: DataConnection }
+  let sendTimer = null;
+
+  // ─── Helpers ──────────────────────────────────────
+  function getColor(p) {
+    return p > 60 ? '#22c55e' : p > 20 ? '#eab308' : '#ef4444';
+  }
+
+  function fmtTime(sec) {
+    if (!isFinite(sec) || sec <= 0) return '—';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  // ─── อัปเดต UI ────────────────────────────────────
+  function updateLocalUI() {
+    if (!battery) return;
+    const pct    = Math.round(battery.level * 100);
+    const color  = getColor(pct);
+    const charge = battery.charging;
+
+    document.getElementById('fill').style.width      = pct + '%';
+    document.getElementById('fill').style.background = color;
+    document.getElementById('pctText').textContent   = pct + '%';
+    document.getElementById('pctText').style.color   = color;
+    document.getElementById('bolt').classList.toggle('show', charge);
+    document.getElementById('chargeLabel').textContent =
+      charge ? '⚡ กำลังชาร์จอยู่' : '🔋 ใช้พลังงานแบต';
+    document.getElementById('statusVal').textContent  =
+      charge ? '⚡ ชาร์จอยู่' : '🔌 ไม่ชาร์จ';
+    document.getElementById('timeVal').textContent    =
+      charge ? fmtTime(battery.chargingTime) : fmtTime(battery.dischargingTime);
+  }
+
+  // ─── สร้างข้อมูลส่ง ───────────────────────────────
+  function buildPayload() {
+    if (!battery) return null;
+    return {
+      percent      : Math.round(battery.level * 100),
+      charging     : battery.charging,
+      dischargingTime: battery.dischargingTime,
+      chargingTime : battery.chargingTime,
+      timestamp    : Date.now()
+    };
+  }
+
+  // ─── broadcast ส่งทุก connection ─────────────────
+  function broadcast() {
+    const data = buildPayload();
+    if (!data) return;
+    Object.values(conns).forEach(c => {
+      if (c.open) c.send(data);
+    });
+    updateLocalUI();
+  }
+
+  // ─── อัปเดต connection list UI ───────────────────
+  function updateConnUI() {
+    const list = document.getElementById('connList');
+    const keys = Object.keys(conns);
+
+    if (keys.length === 0) {
+      list.innerHTML = '<span style="color:#475569">ยังไม่มี Dashboard เชื่อมต่อ</span>';
+      setStatus('waiting', 'รอ Dashboard เชื่อมต่อ...');
+    } else {
+      list.innerHTML = keys.map(id =>
+        `<div class="conn-item">🟢 <span>${id}</span> เชื่อมต่ออยู่</div>`
+      ).join('');
+      setStatus('ready', `Dashboard เชื่อมต่อ ${keys.length} เส้น`);
+    }
+  }
+
+  function setStatus(cls, text) {
+    const b = document.getElementById('statusBadge');
+    b.className = `badge ${cls}`;
+    document.getElementById('statusText').textContent = text;
+  }
+
+  // ─── PeerJS Setup ──────────────────────────────
+  function startDevice() {
+    const id = document.getElementById('peerIdInput')
+                 .value.trim().replace(/\s+/g, '-');
+    if (!id) { alert('กรุณากรอก ID'); return; }
+
+    localStorage.setItem('batt_peer_id', id);
+    initPeer(id);
+  }
+
+  function initPeer(id) {
+    document.getElementById('setupBox').style.display   = 'none';
+    document.getElementById('monitorBox').style.display = 'block';
+    document.getElementById('myIdDisplay').textContent  = id;
+
+    setStatus('waiting', 'กำลังสร้าง Peer...');
+
+    peer = new Peer(id);
+
+    peer.on('open', peerId => {
+      setStatus('waiting', `พร้อมแล้ว รอ Dashboard...`);
+      initBattery();
+    });
+
+    // รับการเชื่อมต่อจาก Dashboard
+    peer.on('connection', conn => {
+      conn.on('open', () => {
+        conns[conn.peer] = conn;
+        updateConnUI();
+        // ส่งข้อมูลทันทีที่เชื่อมต่อ
+        const data = buildPayload();
+        if (data) conn.send(data);
+      });
+
+      conn.on('close', () => {
+        delete conns[conn.peer];
+        updateConnUI();
+      });
+
+      conn.on('error', () => {
+        delete conns[conn.peer];
+        updateConnUI();
+      });
+    });
+
+    peer.on('error', e => {
+      if (e.type === 'unavailable-id') {
+        setStatus('error', '❌ ID นี้ถูกใช้อยู่แล้ว');
+      } else {
+        setStatus('error', '❌ เชื่อมต่อไม่ได้');
+      }
+    });
+  }
+
+  // ─── Battery API ───────────────────────────────
+  function initBattery() {
+    if (!('getBattery' in navigator)) {
+      document.getElementById('batteryUI').innerHTML = `
+        <div class="no-api">
+          ⚠️ Browser ไม่รองรับ Battery API<br/>
+          ใช้ Chrome / Edge บน Windows หรือ Android
+        </div>`;
+      return;
+    }
+
+    navigator.getBattery().then(b => {
+      battery = b;
+      updateLocalUI();
+
+      ['levelchange','chargingchange',
+       'chargingtimechange','dischargingtimechange'].forEach(ev => {
+        b.addEventListener(ev, broadcast);
+      });
+
+      // ส่งซ้ำทุก 10 วิ
+      sendTimer = setInterval(broadcast, 10000);
+    });
+  }
+
+  // ─── Reset ─────────────────────────────────────
+  function resetDevice() {
+    if (!confirm('เปลี่ยน ID?')) return;
+    clearInterval(sendTimer);
+    if (peer) peer.destroy();
+    localStorage.removeItem('batt_peer_id');
+    location.reload();
+  }
+
+  // ─── Auto-load ID ──────────────────────────────
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('batt_peer_id');
+    if (saved) {
+      document.getElementById('peerIdInput').value = saved;
+      initPeer(saved);
+    }
+  });
+</script>
+</body>
+</html>
