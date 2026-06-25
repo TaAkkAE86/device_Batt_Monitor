@@ -3,55 +3,63 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🖥️ Battery Dashboard</title>
+  <title>🔋 Battery Device</title>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0a0f1e;
+      background: #0f172a;
       color: #f1f5f9;
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 20px;
     }
 
-    /* ── Setup ── */
-    .setup-wrap {
-      max-width: 440px;
-      margin: 60px auto;
+    .card {
       background: #1e293b;
       border-radius: 24px;
-      padding: 36px 32px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      text-align: center;
     }
 
-    .setup-wrap h1 { font-size: 1.5rem; margin-bottom: 6px; }
-    .setup-wrap p  { font-size: 0.82rem; color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+    h1 { font-size: 1.4rem; margin-bottom: 6px; }
 
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .sub {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-align: left;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
       background: #0f172a;
       border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-    }
-
-    .input-row span { font-size: 1.1rem; flex-shrink: 0; }
-
-    .input-row input {
-      background: none;
-      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
       color: #f1f5f9;
       font-size: 0.95rem;
-      width: 100%;
+      margin-bottom: 16px;
       outline: none;
     }
 
-    .btn-start {
+    input:focus { border-color: #3b82f6; }
+
+    button {
       width: 100%;
       background: #3b82f6;
       border: none;
@@ -61,218 +69,24 @@
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      margin-top: 8px;
     }
-    .btn-start:hover { background: #2563eb; }
 
-    /* ── Header ── */
-    .header {
+    button:hover { background: #2563eb; }
+
+    /* Monitor */
+    .monitor { display: none; }
+
+    .batt-wrap {
+      margin: 20px auto;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .header h1 { font-size: 1.3rem; }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .live-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 0.75rem;
-      padding: 6px 12px;
-      border-radius: 999px;
-    }
-
-    .live-pill.connected    { background: #052e16; color: #86efac; }
-    .live-pill.connecting   { background: #0c1a3a; color: #93c5fd; }
-    .live-pill.disconnected { background: #450a0a; color: #fca5a5; }
-
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: blink 1.5s infinite;
-    }
-
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-    .btn-sm {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #94a3b8;
-      font-size: 0.75rem;
-      padding: 6px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .btn-sm:hover { background: #334155; }
-
-    /* ── Debug Panel ── */
-    .debug-panel {
-      background: #0f172a;
-      border: 1px solid #1e3a5f;
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 18px;
-      font-size: 0.75rem;
-      font-family: monospace;
-    }
-
-    .debug-title {
-      color: #3b82f6;
-      font-weight: 700;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .debug-log {
-      max-height: 100px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .log-line {
-      display: flex;
-      gap: 8px;
-      color: #64748b;
-    }
-
-    .log-line .time { color: #334155; flex-shrink: 0; }
-    .log-line.ok    .msg { color: #86efac; }
-    .log-line.err   .msg { color: #fca5a5; }
-    .log-line.warn  .msg { color: #fde68a; }
-    .log-line.info  .msg { color: #93c5fd; }
-
-    /* ── Summary ── */
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .sum-card {
-      background: #1e293b;
-      border-radius: 14px;
-      padding: 14px;
-      text-align: center;
-    }
-
-    .sum-label { font-size: 0.7rem; color: #64748b; margin-bottom: 5px; }
-    .sum-val   { font-size: 1.5rem; font-weight: 800; }
-
-    /* ── Grid ── */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    /* ── Device Card ── */
-    .d-card {
-      background: #1e293b;
-      border-radius: 20px;
-      padding: 20px;
-      border: 1px solid transparent;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .d-card.charging::before {
-      content: '';
-      position: absolute;
-      top:0; left:0; right:0; height:3px;
-      background: linear-gradient(90deg,#3b82f6,#22d3ee,#22c55e,#3b82f6);
-      background-size: 200% 100%;
-      animation: flow 2s linear infinite;
-    }
-
-    @keyframes flow { 100%{ background-position:-200% 0; } }
-
-    .d-card.danger  { border-color: rgba(239,68,68,.4); }
-    .d-card.offline { opacity: .6; }
-    .d-card.waiting { border: 2px dashed #334155; background: transparent; }
-
-    /* Card Header */
-    .c-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 14px;
-      gap: 8px;
-    }
-
-    .c-name-wrap { flex: 1; }
-    .c-name { font-size: 0.95rem; font-weight: 700; }
-    .c-id   { font-size: 0.68rem; color: #3b82f6; font-family: monospace; margin-top: 2px; }
-    .c-err  { font-size: 0.65rem; color: #f87171; margin-top: 3px; }
-
-    .c-head-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 5px;
-    }
-
-    .pill {
-      font-size: 0.68rem;
-      padding: 3px 9px;
-      border-radius: 999px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .pill.online    { background:#052e16; color:#86efac; }
-    .pill.offline   { background:#1e293b; color:#64748b; border:1px solid #334155; }
-    .pill.charging  { background:#0c1a3a; color:#93c5fd; }
-    .pill.connecting{ background:#1c1a03; color:#fde68a; }
-    .pill.waiting   { background:#1e293b; color:#475569; border:1px dashed #334155; }
-
-    .btn-reconnect {
-      font-size: 0.65rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: #1e293b;
-      border: 1px solid #3b82f6;
-      color: #3b82f6;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-reconnect:hover { background: #0c1a3a; }
-    .btn-reconnect:disabled {
-      border-color: #334155;
-      color: #334155;
-      cursor: not-allowed;
-    }
-
-    /* Battery */
-    .batt-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
+      justify-content: center;
     }
 
     .batt-body {
-      flex-shrink: 0;
-      width: 76px;
-      height: 36px;
-      border: 3px solid #475569;
-      border-radius: 6px;
+      width: 130px;
+      height: 62px;
+      border: 4px solid #475569;
+      border-radius: 10px;
       position: relative;
       overflow: hidden;
     }
@@ -280,241 +94,214 @@
     .batt-body::after {
       content: '';
       position: absolute;
-      right: -7px; top: 50%;
+      right: -12px; top: 50%;
       transform: translateY(-50%);
-      width: 5px; height: 15px;
+      width: 8px; height: 26px;
       background: #475569;
-      border-radius: 0 3px 3px 0;
+      border-radius: 0 4px 4px 0;
     }
 
-    .batt-inner {
-      height: 100%;
-      border-radius: 3px;
+    .batt-fill {
+      position: absolute;
+      left: 0; top: 0;
+      height: 100%; width: 0%;
+      border-radius: 6px;
       transition: width 1s, background 0.5s;
     }
 
-    .batt-bolt {
+    .bolt {
       position: absolute;
       width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.9rem;
-      z-index: 1;
-      opacity: 0;
-      transition: opacity 0.3s;
+      font-size: 1.4rem; z-index: 1;
+      opacity: 0; transition: opacity 0.3s;
     }
-    .batt-bolt.show { opacity: 1; }
 
-    .batt-pct {
-      font-size: 2rem;
+    .bolt.show { opacity: 1; }
+
+    .pct {
+      font-size: 3rem;
       font-weight: 800;
+      margin: 8px 0 4px;
       transition: color 0.5s;
     }
 
-    .prog-track {
-      background: #0f172a;
-      border-radius: 999px;
-      height: 7px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-
-    .prog-fill {
-      height: 100%;
-      border-radius: 999px;
-      transition: width 1s, background 0.5s;
-    }
-
-    .c-info {
+    .info-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 10px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
     }
 
-    .c-box {
+    .info-box {
       background: #0f172a;
-      border-radius: 8px;
-      padding: 8px 5px;
-      text-align: center;
-    }
-
-    .c-lbl { font-size: 0.6rem; color: #64748b; margin-bottom: 3px; }
-    .c-val { font-size: 0.75rem; font-weight: 600; }
-
-    .advice {
-      border-radius: 8px;
-      padding: 7px 10px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    .advice.success { background:#052e16; color:#86efac; }
-    .advice.warning { background:#3b1f02; color:#fde68a; }
-    .advice.danger  { background:#450a0a; color:#fca5a5; }
-    .advice.info    { background:#0c1a3a; color:#93c5fd; }
-    .advice.offline { background:#1e293b; color:#64748b; border:1px solid #334155; }
-    .advice.waiting { color:#475569; }
-
-    .wait-body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 160px;
-      color: #475569;
-      font-size: 0.82rem;
-    }
-
-    .wait-body .icon { font-size: 2rem; }
-
-    .footer {
-      text-align: center;
-      font-size: 0.72rem;
-      color: #334155;
-      margin-top: 16px;
-    }
-
-    /* Checklist */
-    .checklist {
-      background: #0f172a;
-      border: 1px solid #1e3a5f;
       border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      font-size: 0.78rem;
+      padding: 12px;
     }
 
-    .checklist-title { color: #3b82f6; font-weight: 700; margin-bottom: 8px; }
-    .check-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; color: #64748b; }
-    .check-item.ok   { color: #86efac; }
-    .check-item.fail { color: #fca5a5; }
-    .check-item.warn { color: #fde68a; }
+    .info-label { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; }
+    .info-val   { font-size: 0.9rem; font-weight: 600; }
+
+    /* ID Box */
+    .id-box {
+      background: #0f172a;
+      border: 1px dashed #3b82f6;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .id-label { font-size: 0.7rem; color: #64748b; margin-bottom: 6px; }
+
+    .id-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #3b82f6;
+      letter-spacing: 0.05em;
+    }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .badge.ready    { background: #052e16; color: #86efac; }
+    .badge.waiting  { background: #0c1a3a; color: #93c5fd; }
+    .badge.error    { background: #450a0a; color: #fca5a5; }
+    .badge.nobatt   { background: #3b1f02; color: #fde68a; }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity:1; }
+      50%      { opacity:0.2; }
+    }
+
+    /* Connections list */
+    .conn-list {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 12px;
+      min-height: 36px;
+      text-align: left;
+    }
+
+    .conn-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 3px 0;
+      color: #86efac;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #64748b;
+      font-size: 0.78rem;
+      padding: 8px;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+
+    .reset-btn:hover { background: #1e293b; }
+
+    .no-api {
+      background: #3b1f02;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fde68a;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
   </style>
 </head>
 <body>
+<div class="card">
 
-<!-- ── SETUP ── -->
-<div id="setupWrap" class="setup-wrap">
-  <h1>🖥️ Battery Dashboard</h1>
-  <p>
-    ⚠️ <strong>เปิด device.html บนแต่ละเครื่องก่อน</strong><br/>
-    แล้วค่อยกรอก ID และเปิด Dashboard
-  </p>
+  <!-- SETUP -->
+  <div id="setupBox">
+    <h1>🔋 Battery Device</h1>
+    <p class="sub">ตั้งค่าอุปกรณ์เพื่อส่งข้อมูลไป Dashboard</p>
 
-  <div class="input-row">
-    <span>📱</span>
-    <input id="id1" type="text" placeholder="Device 1 ID เช่น bat-phone"/>
-  </div>
-  <div class="input-row">
-    <span>💻</span>
-    <input id="id2" type="text" placeholder="Device 2 ID (ไม่บังคับ)"/>
-  </div>
-  <div class="input-row">
-    <span>🖥️</span>
-    <input id="id3" type="text" placeholder="Device 3 ID (ไม่บังคับ)"/>
+    <label>🪪 ID อุปกรณ์ (ใช้ภาษาอังกฤษ ไม่มีช่องว่าง)</label>
+    <input type="text" id="peerIdInput"
+      placeholder="เช่น office-laptop, phone-01, tablet-A"/>
+
+    <button onclick="startDevice()">🚀 เริ่มต้น</button>
   </div>
 
-  <button class="btn-start" onclick="startDashboard()">
-    🚀 เปิด Dashboard
-  </button>
-</div>
+  <!-- MONITOR -->
+  <div class="monitor" id="monitorBox">
+    <h1>🔋 Battery Device</h1>
 
-<!-- ── DASHBOARD ── -->
-<div id="dashWrap" style="display:none">
+    <!-- ID แสดงให้ Dashboard ใช้ -->
+    <div class="id-box">
+      <div class="id-label">📡 ID อุปกรณ์นี้ (แจ้ง Dashboard)</div>
+      <div class="id-value" id="myIdDisplay">—</div>
+    </div>
 
-  <div class="header">
-    <h1>🖥️ Battery Dashboard</h1>
-    <div class="header-right">
-      <div class="live-pill connecting" id="peerPill">
-        <div class="dot"></div>
-        <span id="peerPillText">กำลังเชื่อมต่อ PeerJS...</span>
+    <div class="badge waiting" id="statusBadge">
+      <div class="dot"></div>
+      <span id="statusText">รอ Dashboard เชื่อมต่อ...</span>
+    </div>
+
+    <!-- Battery UI -->
+    <div id="batteryUI">
+      <div class="batt-wrap">
+        <div class="batt-body">
+          <div class="batt-fill" id="fill"></div>
+          <div class="bolt" id="bolt">⚡</div>
+        </div>
       </div>
-      <button class="btn-sm" onclick="reconnectAll()">🔄 Reconnect ทั้งหมด</button>
-      <button class="btn-sm" onclick="resetDash()">⚙️ เปลี่ยน ID</button>
-    </div>
-  </div>
 
-  <!-- Checklist -->
-  <div class="checklist" id="checklist">
-    <div class="checklist-title">📋 ตรวจสอบการเชื่อมต่อ</div>
-    <div class="check-item" id="chk-peer">⏳ กำลังเชื่อมต่อ PeerJS Server...</div>
-    <div class="check-item" id="chk-browser">⏳ ตรวจสอบ Browser...</div>
-    <div class="check-item" id="chk-devices">⏳ รอเชื่อมต่ออุปกรณ์...</div>
-  </div>
+      <div class="pct" id="pctText">--%</div>
+      <div style="font-size:0.8rem;color:#64748b;margin-bottom:12px"
+           id="chargeLabel">กำลังอ่าน...</div>
 
-  <!-- Debug -->
-  <div class="debug-panel">
-    <div class="debug-title">
-      🐛 Debug Log
-      <button class="btn-sm" onclick="clearLog()"
-        style="font-size:0.65rem;padding:2px 8px">ล้าง</button>
-    </div>
-    <div class="debug-log" id="debugLog">
-      <div class="log-line info">
-        <span class="time">--:--:--</span>
-        <span class="msg">รอ Dashboard เริ่มต้น...</span>
+      <div class="info-row">
+        <div class="info-box">
+          <div class="info-label">🔌 สถานะ</div>
+          <div class="info-val" id="statusVal">--</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">⏱ เวลาคงเหลือ</div>
+          <div class="info-val" id="timeVal">--</div>
+        </div>
       </div>
     </div>
+
+    <!-- Connections -->
+    <div class="conn-list" id="connList">
+      <span style="color:#475569">ยังไม่มี Dashboard เชื่อมต่อ</span>
+    </div>
+
+    <button class="reset-btn" onclick="resetDevice()">⚙️ เปลี่ยน ID</button>
   </div>
 
-  <!-- Summary -->
-  <div class="summary">
-    <div class="sum-card">
-      <div class="sum-label">📡 ออนไลน์</div>
-      <div class="sum-val" id="sumOnline" style="color:#22c55e">—</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">🔋 แบตเฉลี่ย</div>
-      <div class="sum-val" id="sumAvg">—</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">⚡ ชาร์จอยู่</div>
-      <div class="sum-val" id="sumCharge" style="color:#93c5fd">—</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-label">🚨 แบตต่ำ</div>
-      <div class="sum-val" id="sumLow" style="color:#ef4444">—</div>
-    </div>
-  </div>
-
-  <div class="grid" id="devGrid"></div>
-  <div class="footer" id="footerTs">—</div>
 </div>
 
 <script>
-  // ─── State ─────────────────────────────────────────────
-  const deviceIds   = ['', '', ''];
-  const deviceNames = ['📱 Device 1','💻 Device 2','🖥️ Device 3'];
-  const deviceData  = [{}, {}, {}];
-  const connState   = ['waiting','waiting','waiting'];
-  const connErrMsg  = ['','',''];
-  const connObjs    = [null, null, null];
-  const retryTimers = [null, null, null];
+  let peer      = null;
+  let battery   = null;
+  let conns     = {};    // { connId: DataConnection }
+  let sendTimer = null;
 
-  let peer       = null;
-  let peerReady  = false;
-  const OFFLINE_MS = 25000;
-
-  // ─── Debug Log ─────────────────────────────────────────
-  function log(msg, type='info') {
-    const box  = document.getElementById('debugLog');
-    const now  = new Date().toLocaleTimeString('th-TH');
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    line.innerHTML = `<span class="time">${now}</span><span class="msg">${msg}</span>`;
-    box.appendChild(line);
-    box.scrollTop = box.scrollHeight;
-    // เก็บแค่ 30 บรรทัด
-    while (box.children.length > 30) box.removeChild(box.firstChild);
-  }
-
-  function clearLog() {
-    document.getElementById('debugLog').innerHTML = '';
-  }
-
-  // ─── Helpers ───────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────
   function getColor(p) {
     return p > 60 ? '#22c55e' : p > 20 ? '#eab308' : '#ef4444';
   }
@@ -527,414 +314,164 @@
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
 
-  function getAdvice(pct, charging) {
-    if (charging && pct >= 100) return { text:'✅ แบตเต็มแล้ว', cls:'success' };
-    if (charging)               return { text:'⚡ กำลังชาร์จ',  cls:'info' };
-    if (pct <= 10)              return { text:'🚨 แบตใกล้หมด!', cls:'danger' };
-    if (pct <= 20)              return { text:'💡 แบตเหลือน้อย',cls:'warning' };
-    return { text:'✅ แบตปกติ', cls:'success' };
+  // ─── อัปเดต UI ────────────────────────────────────
+  function updateLocalUI() {
+    if (!battery) return;
+    const pct    = Math.round(battery.level * 100);
+    const color  = getColor(pct);
+    const charge = battery.charging;
+
+    document.getElementById('fill').style.width      = pct + '%';
+    document.getElementById('fill').style.background = color;
+    document.getElementById('pctText').textContent   = pct + '%';
+    document.getElementById('pctText').style.color   = color;
+    document.getElementById('bolt').classList.toggle('show', charge);
+    document.getElementById('chargeLabel').textContent =
+      charge ? '⚡ กำลังชาร์จอยู่' : '🔋 ใช้พลังงานแบต';
+    document.getElementById('statusVal').textContent  =
+      charge ? '⚡ ชาร์จอยู่' : '🔌 ไม่ชาร์จ';
+    document.getElementById('timeVal').textContent    =
+      charge ? fmtTime(battery.chargingTime) : fmtTime(battery.dischargingTime);
   }
 
-  function timeSince(ts) {
-    const s = Math.floor((Date.now() - ts) / 1000);
-    if (s < 60)   return `${s} วิที่แล้ว`;
-    if (s < 3600) return `${Math.floor(s/60)} นาทีที่แล้ว`;
-    return `${Math.floor(s/3600)} ชม.ที่แล้ว`;
+  // ─── สร้างข้อมูลส่ง ───────────────────────────────
+  function buildPayload() {
+    if (!battery) return null;
+    return {
+      percent      : Math.round(battery.level * 100),
+      charging     : battery.charging,
+      dischargingTime: battery.dischargingTime,
+      chargingTime : battery.chargingTime,
+      timestamp    : Date.now()
+    };
   }
 
-  // ─── Checklist ─────────────────────────────────────────
-  function setCheck(id, status, text) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const icons = { ok:'✅', fail:'❌', warn:'⚠️', loading:'⏳' };
-    el.className = `check-item ${status}`;
-    el.textContent = `${icons[status] || '⏳'} ${text}`;
+  // ─── broadcast ส่งทุก connection ─────────────────
+  function broadcast() {
+    const data = buildPayload();
+    if (!data) return;
+    Object.values(conns).forEach(c => {
+      if (c.open) c.send(data);
+    });
+    updateLocalUI();
   }
 
-  // ─── PeerJS Pill ───────────────────────────────────────
-  function setPeerPill(cls, text) {
-    const pill = document.getElementById('peerPill');
-    pill.className = `live-pill ${cls}`;
-    document.getElementById('peerPillText').textContent = text;
-  }
+  // ─── อัปเดต connection list UI ───────────────────
+  function updateConnUI() {
+    const list = document.getElementById('connList');
+    const keys = Object.keys(conns);
 
-  // ─── Build Grid ────────────────────────────────────────
-  function buildGrid() {
-    document.getElementById('devGrid').innerHTML =
-      deviceIds.map((_, i) => `<div id="dcard-${i}"></div>`).join('');
-    deviceIds.forEach((_, i) => renderCard(i));
-  }
-
-  // ─── Render Card ───────────────────────────────────────
-  function renderCard(i) {
-    const el    = document.getElementById(`dcard-${i}`);
-    if (!el) return;
-    const id    = deviceIds[i];
-    const state = connState[i];
-    const d     = deviceData[i];
-    const err   = connErrMsg[i];
-
-    // ไม่มี ID
-    if (!id) {
-      el.className = 'd-card waiting';
-      el.innerHTML = `
-        <div class="wait-body">
-          <div class="icon">⬜</div>
-          <div style="color:#334155">${deviceNames[i]}</div>
-          <div>ไม่ได้กรอก ID</div>
-        </div>`;
-      return;
+    if (keys.length === 0) {
+      list.innerHTML = '<span style="color:#475569">ยังไม่มี Dashboard เชื่อมต่อ</span>';
+      setStatus('waiting', 'รอ Dashboard เชื่อมต่อ...');
+    } else {
+      list.innerHTML = keys.map(id =>
+        `<div class="conn-item">🟢 <span>${id}</span> เชื่อมต่ออยู่</div>`
+      ).join('');
+      setStatus('ready', `Dashboard เชื่อมต่อ ${keys.length} เส้น`);
     }
-
-    // กำลังเชื่อมต่อ
-    if (state === 'connecting') {
-      el.className = 'd-card waiting';
-      el.innerHTML = `
-        <div class="c-head">
-          <div class="c-name-wrap">
-            <div class="c-name">${deviceNames[i]}</div>
-            <div class="c-id">${id}</div>
-          </div>
-          <span class="pill connecting">⏳ กำลังเชื่อมต่อ</span>
-        </div>
-        <div class="wait-body">
-          <div class="icon">📡</div>
-          <div>กำลังหา "${id}"...</div>
-          <div style="font-size:0.7rem;color:#334155">
-            ตรวจสอบว่า device.html เปิดอยู่และใช้ ID นี้
-          </div>
-        </div>`;
-      return;
-    }
-
-    // offline / ไม่เคยรับข้อมูล
-    const isOnline = state === 'connected' &&
-                     d.timestamp &&
-                     (Date.now() - d.timestamp) < OFFLINE_MS;
-
-    if (state === 'offline' || state === 'error' || !isOnline) {
-      el.className = 'd-card offline';
-      el.innerHTML = `
-        <div class="c-head">
-          <div class="c-name-wrap">
-            <div class="c-name">${deviceNames[i]}</div>
-            <div class="c-id">${id}</div>
-            ${err ? `<div class="c-err">⚠️ ${err}</div>` : ''}
-          </div>
-          <div class="c-head-right">
-            <span class="pill offline">📵 ออฟไลน์</span>
-            <button class="btn-reconnect" onclick="manualReconnect(${i})">
-              🔄 เชื่อมต่อใหม่
-            </button>
-          </div>
-        </div>
-        <div class="wait-body">
-          <div class="icon">📵</div>
-          <div>ขาดการเชื่อมต่อ</div>
-          <div style="font-size:0.7rem;color:#334155;text-align:center;line-height:1.5">
-            ${d.timestamp
-              ? `อัปเดตล่าสุด: ${timeSince(d.timestamp)}`
-              : 'ยังไม่เคยได้รับข้อมูล'}
-            <br/>ตรวจสอบ device.html บนอุปกรณ์
-          </div>
-        </div>
-        <div class="advice offline">📵 ออฟไลน์ — กด 🔄 เพื่อเชื่อมใหม่</div>`;
-      return;
-    }
-
-    // Online!
-    const { percent, charging, dischargingTime, chargingTime, timestamp } = d;
-    const color   = getColor(percent);
-    const advice  = getAdvice(percent, charging);
-    const pillCls = charging ? 'charging' : 'online';
-    const pillTxt = charging ? '⚡ ชาร์จอยู่' : '🟢 ออนไลน์';
-
-    el.className = ['d-card',
-      charging   ? 'charging' : '',
-      percent<=10? 'danger'   : ''
-    ].filter(Boolean).join(' ');
-
-    el.innerHTML = `
-      <div class="c-head">
-        <div class="c-name-wrap">
-          <div class="c-name">${deviceNames[i]}</div>
-          <div class="c-id">${id}</div>
-        </div>
-        <span class="pill ${pillCls}">${pillTxt}</span>
-      </div>
-
-      <div class="batt-row">
-        <div class="batt-body">
-          <div class="batt-inner" style="width:${percent}%;background:${color}"></div>
-          <div class="batt-bolt ${charging ? 'show' : ''}">⚡</div>
-        </div>
-        <div class="batt-pct" style="color:${color}">${percent}%</div>
-      </div>
-
-      <div class="prog-track">
-        <div class="prog-fill" style="width:${percent}%;background:${color}"></div>
-      </div>
-
-      <div class="c-info">
-        <div class="c-box">
-          <div class="c-lbl">เวลาคงเหลือ</div>
-          <div class="c-val">${charging ? '—' : fmtTime(dischargingTime)}</div>
-        </div>
-        <div class="c-box">
-          <div class="c-lbl">ชาร์จเต็มใน</div>
-          <div class="c-val">${charging ? fmtTime(chargingTime) : '—'}</div>
-        </div>
-        <div class="c-box">
-          <div class="c-lbl">อัปเดต</div>
-          <div class="c-val" style="font-size:0.65rem">${timeSince(timestamp)}</div>
-        </div>
-      </div>
-
-      <div class="advice ${advice.cls}">${advice.text}</div>
-    `;
   }
 
-  // ─── Summary ───────────────────────────────────────────
-  function updateSummary() {
-    let online=0, tot=0, n=0, chg=0, low=0;
-    const total = deviceIds.filter(Boolean).length;
+  function setStatus(cls, text) {
+    const b = document.getElementById('statusBadge');
+    b.className = `badge ${cls}`;
+    document.getElementById('statusText').textContent = text;
+  }
 
-    deviceIds.forEach((id, i) => {
-      if (!id) return;
-      const d  = deviceData[i];
-      const on = connState[i] === 'connected' &&
-                 d.timestamp &&
-                 (Date.now() - d.timestamp) < OFFLINE_MS;
-      if (on && d.percent != null) {
-        online++; tot += d.percent; n++;
-        if (d.charging)      chg++;
-        if (d.percent <= 20) low++;
-      }
+  // ─── PeerJS Setup ──────────────────────────────
+  function startDevice() {
+    const id = document.getElementById('peerIdInput')
+                 .value.trim().replace(/\s+/g, '-');
+    if (!id) { alert('กรุณากรอก ID'); return; }
+
+    localStorage.setItem('batt_peer_id', id);
+    initPeer(id);
+  }
+
+  function initPeer(id) {
+    document.getElementById('setupBox').style.display   = 'none';
+    document.getElementById('monitorBox').style.display = 'block';
+    document.getElementById('myIdDisplay').textContent  = id;
+
+    setStatus('waiting', 'กำลังสร้าง Peer...');
+
+    peer = new Peer(id);
+
+    peer.on('open', peerId => {
+      setStatus('waiting', `พร้อมแล้ว รอ Dashboard...`);
+      initBattery();
     });
 
-    document.getElementById('sumOnline').textContent  = `${online}/${total}`;
-    document.getElementById('sumAvg').textContent     = n ? Math.round(tot/n)+'%' : '—';
-    document.getElementById('sumCharge').textContent  = chg + ' เครื่อง';
-    document.getElementById('sumLow').textContent     = low + ' เครื่อง';
-    document.getElementById('footerTs').textContent   =
-      `🔄 ${new Date().toLocaleTimeString('th-TH')}`;
+    // รับการเชื่อมต่อจาก Dashboard
+    peer.on('connection', conn => {
+      conn.on('open', () => {
+        conns[conn.peer] = conn;
+        updateConnUI();
+        // ส่งข้อมูลทันทีที่เชื่อมต่อ
+        const data = buildPayload();
+        if (data) conn.send(data);
+      });
 
-    // Checklist devices
-    const onlineIds = deviceIds
-      .filter((id,i) => id && connState[i]==='connected')
-      .join(', ');
-    setCheck('chk-devices',
-      online > 0 ? 'ok' : 'fail',
-      online > 0
-        ? `อุปกรณ์ออนไลน์: ${onlineIds}`
-        : 'ยังไม่มีอุปกรณ์เชื่อมต่อสำเร็จ'
-    );
-  }
+      conn.on('close', () => {
+        delete conns[conn.peer];
+        updateConnUI();
+      });
 
-  // ─── Connect Device ────────────────────────────────────
-  function connectToDevice(i) {
-    if (!peerReady || !deviceIds[i]) return;
-
-    // ยกเลิก retry เก่า
-    if (retryTimers[i]) { clearTimeout(retryTimers[i]); retryTimers[i] = null; }
-
-    // ปิด conn เก่า
-    if (connObjs[i]) {
-      try { connObjs[i].close(); } catch(e) {}
-      connObjs[i] = null;
-    }
-
-    const id = deviceIds[i];
-    connState[i] = 'connecting';
-    connErrMsg[i] = '';
-    renderCard(i);
-    log(`📡 กำลังเชื่อมต่อ "${id}"...`, 'info');
-
-    let conn;
-    try {
-      conn = peer.connect(id, { reliable: true, serialization: 'json' });
-    } catch(e) {
-      log(`❌ connect() error: ${e.message}`, 'err');
-      handleOffline(i, 'connect() failed');
-      return;
-    }
-
-    connObjs[i] = conn;
-
-    // Timeout — ถ้า 10 วิยังไม่ open
-    const openTimer = setTimeout(() => {
-      if (connState[i] === 'connecting') {
-        log(`⏰ หมดเวลาเชื่อมต่อ "${id}" — รอนาน 10 วิ`, 'warn');
-        handleOffline(i, `ไม่พบ "${id}" — ตรวจสอบว่า device เปิดอยู่`);
-      }
-    }, 10000);
-
-    conn.on('open', () => {
-      clearTimeout(openTimer);
-      connState[i] = 'connected';
-      connErrMsg[i] = '';
-      log(`✅ เชื่อมต่อ "${id}" สำเร็จ!`, 'ok');
-      renderCard(i);
-      updateSummary();
-    });
-
-    conn.on('data', data => {
-      deviceData[i] = data;
-      connState[i]  = 'connected';
-      renderCard(i);
-      updateSummary();
-    });
-
-    conn.on('close', () => {
-      clearTimeout(openTimer);
-      log(`🔌 "${id}" ปิดการเชื่อมต่อ`, 'warn');
-      handleOffline(i, 'การเชื่อมต่อถูกปิด');
-      // Auto retry ใน 8 วิ
-      retryTimers[i] = setTimeout(() => {
-        log(`🔄 Auto retry "${id}"...`, 'info');
-        connectToDevice(i);
-      }, 8000);
-    });
-
-    conn.on('error', e => {
-      clearTimeout(openTimer);
-      const msg = e.type === 'peer-unavailable'
-        ? `ไม่พบ "${id}" — ตรวจสอบว่า device เปิดอยู่`
-        : `Error: ${e.type}`;
-      log(`❌ "${id}" — ${msg}`, 'err');
-      handleOffline(i, msg);
-      // Auto retry ใน 8 วิ
-      retryTimers[i] = setTimeout(() => {
-        log(`🔄 Auto retry "${id}"...`, 'info');
-        connectToDevice(i);
-      }, 8000);
-    });
-  }
-
-  function handleOffline(i, msg) {
-    connState[i]  = 'offline';
-    connErrMsg[i] = msg || '';
-    connObjs[i]   = null;
-    renderCard(i);
-    updateSummary();
-  }
-
-  // ─── Manual Reconnect ──────────────────────────────────
-  function manualReconnect(i) {
-    if (!peerReady) {
-      log('⚠️ PeerJS ยังไม่พร้อม รอสักครู่...', 'warn');
-      return;
-    }
-    log(`👆 Manual reconnect "${deviceIds[i]}"`, 'info');
-    connectToDevice(i);
-  }
-
-  function reconnectAll() {
-    log('🔄 Reconnect ทุกอุปกรณ์...', 'info');
-    deviceIds.forEach((_, i) => { if (deviceIds[i]) connectToDevice(i); });
-  }
-
-  // ─── Init PeerJS ───────────────────────────────────────
-  function initDashPeer() {
-    log('🚀 สร้าง Dashboard Peer...', 'info');
-    setCheck('chk-browser',
-      'getBattery' in navigator ? 'ok' : 'warn',
-      'getBattery' in navigator
-        ? 'Browser รองรับ Battery API'
-        : 'Browser ไม่รองรับ Battery API (Dashboard ยังใช้ได้)'
-    );
-
-    peer = new Peer(); // random ID สำหรับ dashboard
-
-    peer.on('open', myId => {
-      peerReady = true;
-      log(`✅ PeerJS พร้อม! (Dashboard ID: ${myId})`, 'ok');
-      setPeerPill('connected', 'PeerJS เชื่อมต่อแล้ว');
-      setCheck('chk-peer', 'ok', `PeerJS Server เชื่อมต่อสำเร็จ (ID: ${myId})`);
-
-      // เชื่อมต่อทุก device
-      deviceIds.forEach((id, i) => { if (id) connectToDevice(i); });
-    });
-
-    peer.on('disconnected', () => {
-      peerReady = false;
-      log('⚠️ PeerJS หลุด กำลัง reconnect...', 'warn');
-      setPeerPill('connecting', 'PeerJS กำลัง reconnect...');
-      setCheck('chk-peer', 'warn', 'PeerJS หลุด กำลัง reconnect...');
-      peer.reconnect();
+      conn.on('error', () => {
+        delete conns[conn.peer];
+        updateConnUI();
+      });
     });
 
     peer.on('error', e => {
-      log(`❌ PeerJS Error: ${e.type} — ${e.message || ''}`, 'err');
-      setPeerPill('disconnected', `PeerJS Error: ${e.type}`);
-
-      if (e.type === 'network' || e.type === 'server-error') {
-        setCheck('chk-peer', 'fail', `PeerJS Server ผิดพลาด: ${e.type}`);
-        // พยายาม reconnect ใน 5 วิ
-        setTimeout(() => {
-          log('🔄 พยายาม reconnect PeerJS...', 'info');
-          if (peer) peer.reconnect();
-        }, 5000);
+      if (e.type === 'unavailable-id') {
+        setStatus('error', '❌ ID นี้ถูกใช้อยู่แล้ว');
+      } else {
+        setStatus('error', '❌ เชื่อมต่อไม่ได้');
       }
     });
   }
 
-  // ─── Start ─────────────────────────────────────────────
-  function startDashboard() {
-    const ids = [
-      document.getElementById('id1').value.trim().replace(/\s+/g,'-'),
-      document.getElementById('id2').value.trim().replace(/\s+/g,'-'),
-      document.getElementById('id3').value.trim().replace(/\s+/g,'-')
-    ];
-
-    if (ids.every(id => !id)) {
-      alert('กรอก ID อย่างน้อย 1 อุปกรณ์');
+  // ─── Battery API ───────────────────────────────
+  function initBattery() {
+    if (!('getBattery' in navigator)) {
+      document.getElementById('batteryUI').innerHTML = `
+        <div class="no-api">
+          ⚠️ Browser ไม่รองรับ Battery API<br/>
+          ใช้ Chrome / Edge บน Windows หรือ Android
+        </div>`;
       return;
     }
 
-    ids.forEach((id, i) => { deviceIds[i] = id; });
-    localStorage.setItem('dash_ids', JSON.stringify(ids));
+    navigator.getBattery().then(b => {
+      battery = b;
+      updateLocalUI();
 
-    document.getElementById('setupWrap').style.display = 'none';
-    document.getElementById('dashWrap').style.display  = 'block';
+      ['levelchange','chargingchange',
+       'chargingtimechange','dischargingtimechange'].forEach(ev => {
+        b.addEventListener(ev, broadcast);
+      });
 
-    buildGrid();
-    initDashPeer();
-
-    // Refresh ทุก 5 วิ
-    setInterval(() => {
-      deviceIds.forEach((_, i) => renderCard(i));
-      updateSummary();
-    }, 5000);
+      // ส่งซ้ำทุก 10 วิ
+      sendTimer = setInterval(broadcast, 10000);
+    });
   }
 
-  function resetDash() {
-    if (!confirm('เปลี่ยนการตั้งค่า?')) return;
+  // ─── Reset ─────────────────────────────────────
+  function resetDevice() {
+    if (!confirm('เปลี่ยน ID?')) return;
+    clearInterval(sendTimer);
     if (peer) peer.destroy();
-    localStorage.removeItem('dash_ids');
+    localStorage.removeItem('batt_peer_id');
     location.reload();
   }
 
-  // ─── Auto-load ─────────────────────────────────────────
+  // ─── Auto-load ID ──────────────────────────────
   window.addEventListener('load', () => {
-    const saved = localStorage.getItem('dash_ids');
+    const saved = localStorage.getItem('batt_peer_id');
     if (saved) {
-      const ids = JSON.parse(saved);
-      ids.forEach((id, i) => {
-        deviceIds[i] = id;
-        const el = document.getElementById(`id${i+1}`);
-        if (el) el.value = id || '';
-      });
-      if (ids.some(Boolean)) {
-        document.getElementById('setupWrap').style.display = 'none';
-        document.getElementById('dashWrap').style.display  = 'block';
-        buildGrid();
-        initDashPeer();
-        setInterval(() => {
-          deviceIds.forEach((_, i) => renderCard(i));
-          updateSummary();
-        }, 5000);
-      }
+      document.getElementById('peerIdInput').value = saved;
+      initPeer(saved);
     }
   });
 </script>
